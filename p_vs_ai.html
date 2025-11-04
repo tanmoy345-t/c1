@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Math Duel — Quick PvE</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+	<style>
+		:root{
+			--bg:#0b1020;
+			--bg-2:#0e142b;
+			--text:#eef3ff;
+			--muted:#9aa6c7;
+			--glass:rgba(255,255,255,0.06);
+			--glass-2:rgba(255,255,255,0.10);
+			--glass-stroke:rgba(255,255,255,0.16);
+			--primary:#7c5cff;
+			--radius:16px;
+			--shadow:0 10px 30px rgba(0,0,0,0.35);
+			--win:#3ddc97;
+			--lose:#ff6b6b;
+		}
+		*{box-sizing:border-box}
+		html,body{height:100%}
+		body{
+			margin:0;
+			font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Helvetica Neue',Arial,'Noto Sans',sans-serif;
+			color:var(--text);
+			background: radial-gradient(1200px 800px at 50% -10%, #2b2f6a33, transparent 60%), linear-gradient(180deg, var(--bg), var(--bg-2));
+			display:flex;
+			align-items:flex-start;
+			justify-content:center;
+			visibility:hidden;
+		}
+		body[data-ready="true"]{ visibility:visible }
+
+		.container{ width:min(900px, 94%); margin:28px auto; }
+
+		.identity{
+			display:flex; align-items:center; justify-content:center; gap:14px; margin:10px 0 18px;
+		}
+		.avatar{
+			width:62px; height:62px; border-radius:14px; overflow:hidden;
+			background:#11183a; border:1px solid var(--glass-stroke); box-shadow:var(--shadow);
+			image-rendering:pixelated;
+		}
+		.avatar img{ width:100%; height:100%; object-fit:cover }
+		.username{
+			font-weight:800; font-size:20px; letter-spacing:0.2px;
+			background: linear-gradient(180deg, #ffffff, #cbd5ff);
+			-webkit-background-clip:text; background-clip:text; color:transparent;
+		}
+		.header-line{ margin:12px 0 16px; border-bottom:1px solid rgba(255,255,255,0.08); }
+
+		.panel{
+			border-radius:var(--radius);
+			background:var(--glass);
+			border:1px solid var(--glass-stroke);
+			backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+			box-shadow: 0 8px 20px rgba(0,0,0,0.25) inset, 0 10px 24px rgba(0,0,0,0.15);
+			padding:16px;
+		}
+
+		.topbar{
+			display:flex; align-items:center; justify-content:space-between; gap:12px;
+			margin-bottom:12px;
+		}
+		.badges{ display:flex; gap:8px; flex-wrap:wrap; }
+		.badge{
+			padding:6px 10px; border-radius:999px; font-size:12px; color:#eaf0ff;
+			border:1px solid var(--glass-stroke); background:rgba(255,255,255,0.07);
+		}
+		.timer{
+			font-weight:800; font-variant-numeric:tabular-nums;
+			padding:6px 10px; border-radius:10px; border:1px solid var(--glass-stroke);
+			background: rgba(255,255,255,0.08);
+		}
+
+		.grid{
+			display:grid; grid-template-columns: 1.1fr 0.9fr; gap:14px;
+		}
+		@media (max-width:780px){ .grid{ grid-template-columns: 1fr } }
+
+		.card{
+			background: var(--glass-2);
+			border:1px solid var(--glass-stroke);
+			border-radius:12px; padding:14px;
+			backdrop-filter: blur(10px);
+		}
+		.card h3{ margin:0 0 10px; font-size:14px; color:var(--muted) }
+
+		.question{
+			font-weight:800; font-size:28px; letter-spacing:0.4px; text-align:center; margin:6px 0 14px;
+			min-height:36px;
+		}
+		.answerRow{ display:flex; align-items:center; gap:10px; }
+		input[type="number"]{
+			flex:1; min-width:0;
+			padding:10px 12px; border-radius:10px; outline:none;
+			border:1px solid var(--glass-stroke); background:rgba(255,255,255,0.06);
+			color:var(--text); font-size:16px;
+		}
+		button{
+			padding:10px 14px; border-radius:10px; border:1px solid var(--glass-stroke);
+			background: linear-gradient(180deg, rgba(124,92,255,0.25), rgba(124,92,255,0.15));
+			color:#fff; font-weight:700; cursor:pointer;
+			transition: transform .05s ease, box-shadow .2s ease;
+		}
+		button:hover{ transform: translateY(-1px) }
+		button:disabled{ opacity:0.6; cursor:not-allowed }
+
+		.small{ font-size:12px; color:var(--muted); min-height:16px; }
+		.row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+		.pill{ padding:6px 10px; border-radius:999px; border:1px solid var(--glass-stroke); background: rgba(255,255,255,0.08); font-variant-numeric:tabular-nums; }
+		.win{ color:var(--win); font-weight:800 }
+		.lose{ color:var(--lose); font-weight:800 }
+
+		.aiState{
+			margin-top:8px; padding:10px; border-radius:10px;
+			background: rgba(255,255,255,0.06); border:1px solid var(--glass-stroke);
+			font-size:13px; color:var(--muted);
+		}
+
+		.result{
+			text-align:center; padding:18px; border-radius:12px;
+			background:rgba(255,255,255,0.08); border:1px solid var(--glass-stroke);
+			margin-top:12px;
+		}
+		.big{ font-size:22px; font-weight:800; margin:8px 0 }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="identity" aria-label="Player identity">
+			<div class="avatar">
+				<img id="playerAvatar" alt="Player avatar (pixel art animal)" src="https://api.dicebear.com/7.x/pixel-art/svg?seed=Tiger" />
+			</div>
+			<div class="username" id="username">@player</div>
+		</div>
+
+		<div class="header-line"></div>
+
+		<div class="panel">
+			<div class="topbar">
+				<div class="badges">
+					<span class="badge" id="qProgress">Question 1 / 10</span>
+					<span class="badge" id="difficultyBadge">Difficulty: 1</span>
+				</div>
+				<div class="timer" id="timer">00:10</div>
+			</div>
+
+			<div class="grid">
+				<!-- Player card -->
+				<div class="card">
+					<h3>Player</h3>
+					<div class="row" style="margin-bottom:8px">
+						<span class="small">Score</span>
+						<span class="pill" id="playerScore">0</span>
+					</div>
+					<div class="question" id="questionText"></div>
+					<div class="answerRow">
+						<input type="number" id="answerInput" inputmode="numeric" placeholder="Your answer" />
+						<button id="submitBtn">Submit</button>
+					</div>
+					<div class="small" id="feedback" style="margin-top:8px"></div>
+				</div>
+
+				<!-- AI card -->
+				<div class="card">
+					<h3>AI (Human-like)</h3>
+					<div class="row" style="margin-bottom:8px">
+						<span class="small">Score</span>
+						<span class="pill" id="aiScore">0</span>
+					</div>
+					<div class="aiState" id="aiState">Preparing…</div>
+					<div class="small" id="aiDetail"></div>
+				</div>
+			</div>
+
+			<div class="result" id="result" style="display:none">
+				<div class="big" id="resultTitle">Results</div>
+				<div style="display:flex; gap:10px; justify-content:center; margin:8px 0 2px;">
+					<span class="pill">Player: <span id="finalPlayer">0</span></span>
+					<span class="pill">AI: <span id="finalAI">0</span></span>
+					<span class="pill">Correct: <span id="finalCorrect">0</span>/10</span>
+				</div>
+				<div class="small" id="resultNote" style="margin-top:6px"></div>
+				<div style="margin-top:12px">
+					<button id="playAgain">Play Again</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		// Reveal after DOM is ready to prevent flashes
+		document.addEventListener('DOMContentLoaded', () => {
+			document.body.setAttribute('data-ready','true');
+		});
+	</script>
+
+	<script>
+		// Identity demo
+		const username = '@tiger_math';
+		const avatarSeeds = ['Tiger','Fox','Panda','Penguin','Cat','Dog','Koala','Lion','Bear','Rabbit'];
+		function rand(arr){ return arr[Math.floor(Math.random()*arr.length)] }
+		document.getElementById('username').textContent = username;
+		document.getElementById('playerAvatar').src = 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + rand(avatarSeeds);
+
+		// Game config
+		const TOTAL_QUESTIONS = 10;
+		const BASE_TIME = 10; // seconds per question
+		const questionEl = document.getElementById('questionText');
+		const timerEl = document.getElementById('timer');
+		const qProgressEl = document.getElementById('qProgress');
+		const difficultyBadge = document.getElementById('difficultyBadge');
+		const answerInput = document.getElementById('answerInput');
+		const submitBtn = document.getElementById('submitBtn');
+		const feedbackEl = document.getElementById('feedback');
+		const aiState = document.getElementById('aiState');
+		const aiDetail = document.getElementById('aiDetail');
+		const playerScoreEl = document.getElementById('playerScore');
+		const aiScoreEl = document.getElementById('aiScore');
+		const resultBox = document.getElementById('result');
+		const finalPlayer = document.getElementById('finalPlayer');
+		const finalAI = document.getElementById('finalAI');
+		const finalCorrect = document.getElementById('finalCorrect');
+		const resultTitle = document.getElementById('resultTitle');
+		const resultNote = document.getElementById('resultNote');
+		const playAgainBtn = document.getElementById('playAgain');
+
+		let currentIndex = 0;
+		let difficulty = 1;
+		let timeLeft = BASE_TIME;
+		let timerId = null;
+		let aiTimeoutId = null;
+		let currentQuestion = null;
+		let playerScore = 0;
+		let aiScore = 0;
+		let numCorrect = 0;
+		let questionResolved = false;
+
+		function formatTime(sec){
+			const s = Math.max(0, sec|0);
+			return `00:${s.toString().padStart(2,'0')}`;
+		}
+
+		function nextDifficulty(index){
+			// Gradual, easy scaling across 10 questions, capping at 5
+			return Math.min(5, 1 + Math.floor(index / 2));
+		}
+
+		function rngInt(min, max){ return Math.floor(Math.random()*(max-min+1)) + min }
+
+		function makeEasyOperands(level){
+			// Level controls range; keep small to stay easy
+			const ranges = {
+				1: { a:[1,9], b:[1,9] },
+				2: { a:[2,12], b:[1,12] },
+				3: { a:[3,15], b:[2,12] },
+				4: { a:[5,20], b:[2,15] },
+				5: { a:[6,25], b:[3,18] }
+			};
+			const r = ranges[level] || ranges[1];
+			return [rngInt(r.a[0], r.a[1]), rngInt(r.b[0], r.b[1])];
+		}
+
+		function generateQuestion(level){
+			const ops = ['+','-','×','÷'];
+			const op = ops[rngInt(0, ops.length-1)];
+			let a, b, text, answer;
+
+			if(op === '+'){
+				[a,b] = makeEasyOperands(level);
+				answer = a + b;
+				text = `${a} + ${b}`;
+			} else if(op === '-'){
+				[a,b] = makeEasyOperands(level);
+				if(b > a) [a,b] = [b,a]; // ensure non-negative
+				answer = a - b;
+				text = `${a} - ${b}`;
+			} else if(op === '×'){
+				[a,b] = makeEasyOperands(level);
+				if(level <= 2){ a = rngInt(2,9); b = rngInt(2,9); } // small tables
+				answer = a * b;
+				text = `${a} × ${b}`;
+			} else {
+				// Division: integer result
+				const base = level <= 2 ? rngInt(2,9) : rngInt(2,12);
+				const mul = level <= 3 ? rngInt(2,9) : rngInt(2,12);
+				a = base * mul;
+				b = mul;
+				answer = base;
+				text = `${a} ÷ ${b}`;
+			}
+			return { text, answer, op };
+		}
+
+		function aiProfile(level){
+			// Human-like behavior
+			const accuracy = [0, 0.78, 0.82, 0.86, 0.9, 0.93][level] || 0.85;
+			const mean = [0, 3200, 2800, 2500, 2200, 2000][level] || 2400; // ms
+			const jitter = 700;
+			const thinkTime = Math.max(700, Math.round(mean + (Math.random()*2-1)*jitter));
+			return { accuracy, thinkTime };
+		}
+
+		function startTimer(){
+			clearInterval(timerId);
+			timeLeft = BASE_TIME;
+			timerEl.textContent = formatTime(timeLeft);
+			timerId = setInterval(() => {
+				timeLeft -= 1;
+				timerEl.textContent = formatTime(timeLeft);
+				if(timeLeft <= 0){
+					clearInterval(timerId);
+					handleTimeout();
+				}
+			}, 1000);
+		}
+
+		function startAI(level, correctAnswer){
+			aiState.textContent = 'AI is thinking…';
+			aiDetail.textContent = '';
+			const { accuracy, thinkTime } = aiProfile(level);
+
+			clearTimeout(aiTimeoutId);
+			const msBeforeTimeout = Math.max(200, (timeLeft * 1000) - 150);
+			const delay = Math.min(thinkTime, msBeforeTimeout);
+
+			aiTimeoutId = setTimeout(() => {
+				if(questionResolved) return;
+				const willBeCorrect = Math.random() < accuracy;
+				const aiAnswerRaw = willBeCorrect ? correctAnswer : (correctAnswer + rngInt(-2,2));
+				let aiAnswer = aiAnswerRaw;
+				if(!willBeCorrect && aiAnswer === correctAnswer){
+					aiAnswer += (Math.random() < 0.5 ? -1 : 1);
+				}
+				aiState.textContent = `AI answered: ${aiAnswer}`;
+				aiDetail.textContent = willBeCorrect ? 'AI got it right.' : 'AI made a mistake.';
+				resolveRound({ player: null, ai: aiAnswer });
+			}, delay);
+		}
+
+		function setQuestion(){
+			questionResolved = false;
+			difficulty = nextDifficulty(currentIndex);
+			difficultyBadge.textContent = `Difficulty: ${difficulty}`;
+			qProgressEl.textContent = `Question ${currentIndex+1} / ${TOTAL_QUESTIONS}`;
+			currentQuestion = generateQuestion(difficulty);
+			questionEl.textContent = currentQuestion.text;
+			feedbackEl.textContent = 'Answer before time runs out.';
+			answerInput.value = '';
+			answerInput.focus();
+			aiState.textContent = 'AI is thinking…';
+			aiDetail.textContent = '';
+			startTimer();
+			startAI(difficulty, currentQuestion.answer);
+		}
+
+		function handleTimeout(){
+			if(questionResolved) return;
+			feedbackEl.textContent = 'Time up!';
+			if(!aiState.textContent.includes('answered')) aiDetail.textContent = 'AI also missed.';
+			resolveRound({ player: null, ai: null });
+		}
+
+		function resolveRound({ player, ai }){
+			if(questionResolved) return;
+			questionResolved = true;
+			clearInterval(timerId);
+			clearTimeout(aiTimeoutId);
+
+			const correct = currentQuestion.answer;
+			const playerProvided = player !== null && player !== undefined;
+			const aiProvided = ai !== null && ai !== undefined;
+
+			const playerCorrect = playerProvided && Number(player) === correct;
+			const aiCorrect = aiProvided && Number(ai) === correct;
+
+			if(playerCorrect){ playerScore++; numCorrect++; }
+			if(aiCorrect){ aiScore++; }
+			playerScoreEl.textContent = playerScore;
+			aiScoreEl.textContent = aiScore;
+
+			feedbackEl.innerHTML = playerProvided
+				? (playerCorrect ? `<span class="win">Correct!</span>` : `Wrong. Correct was <span class="win">${correct}</span>.`)
+				: `You missed it. Correct was <span class="win">${correct}</span>.`;
+
+			setTimeout(() => {
+				currentIndex++;
+				if(currentIndex >= TOTAL_QUESTIONS){
+					showResults();
+				} else {
+					setQuestion();
+				}
+			}, 800);
+		}
+
+		submitBtn.addEventListener('click', () => {
+			if(questionResolved) return;
+			const val = answerInput.value.trim();
+			if(val === '') return;
+			resolveRound({ player: Number(val), ai: null });
+		});
+		answerInput.addEventListener('keydown', (e) => {
+			if(e.key === 'Enter') submitBtn.click();
+		});
+
+		function showResults(){
+			resultBox.style.display = '';
+			finalPlayer.textContent = playerScore;
+			finalAI.textContent = aiScore;
+			finalCorrect.textContent = numCorrect;
+
+			if(playerScore > aiScore){
+				resultTitle.textContent = 'You Win!';
+				resultTitle.style.color = 'var(--win)';
+				resultNote.textContent = 'Great job! You outscored the AI.';
+			} else if(playerScore < aiScore){
+				resultTitle.textContent = 'AI Wins';
+				resultTitle.style.color = 'var(--lose)';
+				resultNote.textContent = 'The AI edged ahead. Try again!';
+			} else {
+				resultTitle.textContent = 'Draw';
+				resultTitle.style.color = '#e8ecff';
+				resultNote.textContent = 'Neck and neck—nice match!';
+			}
+
+			answerInput.disabled = true;
+			submitBtn.disabled = true;
+			aiState.textContent = 'Match over.';
+			aiDetail.textContent = '';
+		}
+
+		document.getElementById('playAgain').addEventListener('click', () => {
+			currentIndex = 0;
+			playerScore = 0; aiScore = 0; numCorrect = 0;
+			playerScoreEl.textContent = '0';
+			aiScoreEl.textContent = '0';
+			answerInput.disabled = false;
+			submitBtn.disabled = false;
+			resultBox.style.display = 'none';
+			setQuestion();
+		});
+
+		// Init
+		setQuestion();
+	</script>
+</body>
+</html>
+```
